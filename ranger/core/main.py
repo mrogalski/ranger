@@ -15,10 +15,6 @@ def main():
     from ranger.core.shared import FileManagerAware, SettingsAware
     from ranger.core.fm import FM
 
-    if not sys.stdin.isatty():
-        sys.stderr.write("Error: Must run ranger from terminal\n")
-        raise SystemExit(1)
-
     try:
         locale.setlocale(locale.LC_ALL, '')
     except:
@@ -42,7 +38,10 @@ def main():
     if arg.list_tagged_files:
         fm = FM()
         try:
-            f = open(fm.confpath('tagged'), 'r')
+            if sys.version_info[0] >= 3:
+                f = open(fm.confpath('tagged'), 'r', errors='replace')
+            else:
+                f = open(fm.confpath('tagged'), 'r')
         except:
             pass
         else:
@@ -104,9 +103,14 @@ def main():
                     print(chr(key))
             return 1 if arg.fail_unless_cd else 0 # COMPAT
 
+        if not sys.stdin.isatty():
+            sys.stderr.write("Error: Must run ranger from terminal\n")
+            raise SystemExit(1)
+
         if fm.username == 'root':
             fm.settings.preview_files = False
             fm.settings.use_preview_script = False
+            fm.log.append("Running as root, disabling the file previews.")
         if not arg.debug:
             from ranger.ext import curses_interrupt_handler
             curses_interrupt_handler.install_interrupt_handler()
